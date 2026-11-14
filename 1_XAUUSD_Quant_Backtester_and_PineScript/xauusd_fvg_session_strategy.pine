@@ -1,0 +1,25 @@
+//@version=5
+indicator("Vishal XAUUSD 3m FVG + London/NY Session Quant Filter", overlay=true, max_boxes_count=500)
+
+// --- Session Inputs (UTC / IST adjusted) ---
+london_session = input.session("0700-1600", "London Session (UTC)")
+ny_session     = input.session("1200-2100", "New York Session (UTC)")
+risk_pct       = input.float(1.0, "Fixed Account Risk (%)", minval=0.1, maxval=5.0)
+rr_target      = input.float(2.0, "Target Risk-Reward Ratio (R)", minval=1.5, maxval=3.0)
+
+in_london = not na(time(timeframe.period, london_session, "UTC"))
+in_ny     = not na(time(timeframe.period, ny_session, "UTC"))
+active_session = in_london or in_ny
+
+// --- 3-Candle Fair Value Gap (FVG) Detection ---
+bull_fvg = low > high[2] and close[1] > open[1] and active_session
+bear_fvg = high < low[2] and close[1] < open[1] and active_session
+
+if bull_fvg
+    box.new(bar_index[2], low, bar_index + 6, high[2], border_color=color.new(color.teal, 20), bgcolor=color.new(color.teal, 80))
+
+if bear_fvg
+    box.new(bar_index[2], low[2], bar_index + 6, high, border_color=color.new(color.red, 20), bgcolor=color.new(color.red, 80))
+
+plotshape(bull_fvg, title="Bullish FVG Signal", style=shape.triangleup, location=location.belowbar, color=color.teal, size=size.small, text="LONG FVG")
+plotshape(bear_fvg, title="Bearish FVG Signal", style=shape.triangledown, location=location.abovebar, color=color.red, size=size.small, text="SHORT FVG")
